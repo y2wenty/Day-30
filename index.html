@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Happy 1st Anniversary!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #58111A;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Playfair Display', Georgia, serif;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* MUSIC CONTROL BUTTON */
+    .music-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 3000;
+      background: rgba(18, 18, 18, 0.75);
+      border: 1px solid #D4AF37;
+      color: #D4AF37;
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .music-btn:hover {
+      transform: scale(1.08);
+      background: rgba(18, 18, 18, 0.95);
+    }
+
+    /* PUZZLE OVERLAY CONTAINER */
+    .puzzle-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      background-color: #121212;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .puzzle-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(1.05);
+    }
+
+    .puzzle-header {
+      color: #D4AF37;
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.1rem, 3vw, 1.6rem);
+      margin-bottom: 20px;
+      text-align: center;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
+
+    /* PUZZLE GRID */
+    .puzzle-grid {
+      width: 300px;
+      height: 300px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 3px;
+      background: #D4AF37;
+      padding: 3px;
+      border-radius: 8px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+    }
+
+    .puzzle-piece {
+      width: 100%;
+      height: 100%;
+      background-size: 300px 300px;
+      cursor: pointer;
+      border: 1.5px solid rgba(255, 255, 255, 0.8);
+      box-shadow: inset 0 0 6px rgba(0,0,0,0.6);
+      transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      user-select: none;
+    }
+
+    .puzzle-piece.selected {
+      border: 3px solid #FFD700;
+      box-shadow: 0 0 12px #FFD700, inset 0 0 8px rgba(0,0,0,0.8);
+      transform: scale(1.05);
+      z-index: 10;
+    }
+
+    .puzzle-status {
+      margin-top: 18px;
+      color: #E6C280;
+      font-size: 0.85rem;
+      font-style: italic;
+      text-align: center;
+      min-height: 24px;
+    }
+
+    /* DIARY CONTAINER */
+    .center-card {
+      background-color: #121212;
+      width: 95vw;
+      max-width: 1100px;
+      height: 62vh;
+      max-height: 560px;
+      min-height: 400px;
+      border-radius: 20px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      padding: 15px;
+      overflow: hidden;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .center-card.hidden {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: scale(0.95) !important;
+    }
+
+    .scene {
+      width: 100%;
+      height: 100%;
+      perspective: 1400px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .book-spread {
+      width: 90%;
+      max-width: 860px;
+      height: 90%;
+      position: relative;
+      transform-style: preserve-3d;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
+      transform: translateX(-25%);
+    }
+
+    .book-spread.is-open {
+      transform: translateX(0);
+    }
+
+    .leaf {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 50%;
+      height: 100%;
+      transform-origin: left center;
+      transform-style: preserve-3d;
+      transition: transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
+      cursor: pointer;
+    }
+
+    #front-cover { z-index: 10; }
+    #page1-leaf  { z-index: 5; }
+    #page2-leaf  { z-index: 4; }
+    #page3-leaf  { z-index: 3; }
+    #back-cover  { z-index: 1; }
+
+    #front-cover.flipped { transform: rotateY(-180deg); z-index: 2; }
+    #page1-leaf.flipped  { transform: rotateY(-180deg); z-index: 6; }
+    #page2-leaf.flipped  { transform: rotateY(-180deg); z-index: 7; }
+    #page3-leaf.flipped  { transform: rotateY(-180deg); z-index: 8; }
+    #back-cover.flipped  { transform: rotateY(-180deg); z-index: 30; }
+
+    .face {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
+      align-items: center;
+      text-align: center;
+      padding: 12px;
+      overflow: hidden;
+    }
+
+    .face.back {
+      transform: rotateY(180deg);
+    }
+
+    .cover-face {
+      background: linear-gradient(135deg, #4A2515 0%, #2A1208 100%);
+      border: 2px solid #63331C;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.9), 5px 5px 15px rgba(0,0,0,0.5);
+    }
+
+    .cover-face.front { border-radius: 0 8px 8px 0; overflow-y: auto; }
+    .cover-face.back  { border-radius: 8px 0 0 8px; }
+
+    .cover-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1rem, 2.4vw, 1.35rem);
+      font-weight: 800;
+      line-height: 1.3;
+      letter-spacing: 1.2px;
+      background: linear-gradient(45deg, #D4AF37, #FFF5C0, #AA7C11);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+    }
+
+    .heart-icon { color: #D4AF37; font-size: 0.9rem; }
+    .click-hint {
+      position: absolute; bottom: 8px; font-size: 0.6rem;
+      color: #A88944; letter-spacing: 1px; text-transform: uppercase; font-family: sans-serif;
+    }
+
+    .page-face {
+      background: #FDFBF7;
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.05), 2px 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .page-face.front {
+      border-radius: 0 6px 6px 0;
+      border-left: 2px solid #E0DACE;
+    }
+
+    .page-face.back {
+      border-radius: 6px 0 0 6px;
+      border-right: 2px solid #E0DACE;
+      justify-content: flex-start;
+      padding: 18px 10px;
+      gap: 12px;
+    }
+
+    .page-face h2 {
+      color: #58111A;
+      font-size: clamp(0.85rem, 1.8vw, 1rem);
+      font-family: 'Cinzel', serif;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    .page-face p {
+      color: #444;
+      font-size: clamp(0.65rem, 1.3vw, 0.75rem);
+      line-height: 1.35;
+      font-style: italic;
+    }
+
+    .poem-box {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 92%;
+      text-align: center;
+      margin: auto 0;
+    }
+
+    .poem-box p {
+      color: #333;
+      font-size: clamp(0.58rem, 1.25vw, 0.72rem);
+      line-height: 1.35;
+      font-style: italic;
+    }
+
+    .photo-img {
+      width: 72%;
+      height: 54%;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 3px solid #FFF;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    .photo-img-p2 {
+      width: 75%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 3px solid #FFF;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      flex-shrink: 0;
+    }
+
+    .photo-img-full {
+      max-width: 82%;
+      max-height: 58%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 6px;
+      border: 3px solid #FFF;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      background-color: #FFF;
+    }
+
+    .photo-img-trigger {
+      max-width: 75%;
+      max-height: 42%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      background-color: transparent;
+      cursor: pointer;
+    }
+
+    /* FEEDBACK FORM STYLING */
+    .feedback-section {
+      width: 90%;
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .instruction-text {
+      color: #E6C280;
+      font-size: clamp(0.55rem, 1.1vw, 0.65rem);
+      line-height: 1.2;
+      font-style: italic;
+      text-align: center;
+    }
+
+    .feedback-input, .feedback-textarea {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid #8A5A36;
+      border-radius: 4px;
+      padding: 4px 6px;
+      color: #FFF;
+      font-family: sans-serif;
+      font-size: 0.65rem;
+      outline: none;
+    }
+
+    .feedback-textarea {
+      resize: none;
+      height: 32px;
+    }
+
+    .feedback-input::placeholder, .feedback-textarea::placeholder {
+      color: #B39268;
+    }
+
+    .submit-btn {
+      background: linear-gradient(45deg, #D4AF37, #AA7C11);
+      color: #2A1208;
+      border: none;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 0.6rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .feedback-list {
+      width: 100%;
+      max-height: 55px;
+      overflow-y: auto;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-right: 2px;
+    }
+
+    .feedback-item {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 4px 6px;
+      border-radius: 3px;
+      border-left: 2px solid #D4AF37;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .feedback-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .feedback-name {
+      color: #D4AF37;
+      font-size: 0.55rem;
+      font-weight: bold;
+    }
+
+    .delete-btn {
+      color: #FF6B6B;
+      font-size: 0.5rem;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-family: sans-serif;
+      text-transform: uppercase;
+      opacity: 0.7;
+    }
+
+    .delete-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+
+    .feedback-msg {
+      color: #DDD;
+      font-size: 0.55rem;
+      font-family: sans-serif;
+      word-break: break-word;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- JIGSAW PUZZLE OVERLAY -->
+  <div class="puzzle-overlay" id="puzzleOverlay">
+    <h2 class="puzzle-header">Solve the jigsaw puzzle to move forward</h2>
+    <div class="puzzle-grid" id="puzzleGrid"></div>
+    <p class="puzzle-status" id="puzzleStatus">Tap two pieces to swap their positions</p>
+  </div>
+
+  <!-- BACKGROUND MUSIC PLAYER & CONTROL -->
+  <audio id="bgMusic" preload="auto">
+    <source src="https://www.dropbox.com/scl/fi/as0if1sl9e0ftd9bbpacr/Aakhri-Saans-Iqlipse-Nova-Aditya-A-Official-Video-Iqlipse-Nova.mp3?rlkey=06ax46li8xz3lat4xduogg29a&st=e0710dcz&raw=1" type="audio/mpeg">
+  </audio>
+
+  <button class="music-btn" id="musicToggleBtn" onclick="toggleMusic(event)" title="Toggle Music">
+    🎵
+  </button>
+
+  <div class="center-card" id="diaryCard">
+    <div class="scene">
+      <div class="book-spread" id="bookSpread">
+
+        <!-- BACK COVER LEAF -->
+        <div class="leaf" id="back-cover">
+          <div class="face cover-face front" onclick="closeDiary(event)">
+            <img src="https://i.ibb.co/MydcC77h/IMG-20261007-085529.png" alt="Trigger Image" class="photo-img-trigger" onclick="showFinalImage(event)">
+
+            <!-- INSTRUCTION & FEEDBACK SECTION -->
+            <div class="feedback-section" onclick="event.stopPropagation();">
+              <p class="instruction-text">After clicking on the turtle and bird be sure to leave your reply here.</p>
+              
+              <input type="text" id="fbName" class="feedback-input" placeholder="Your Name?(Hint:Kayuu)" maxlength="20">
+              <textarea id="fbMessage" class="feedback-textarea" placeholder="Write your reply here bhonduuu!😋" maxlength="150"></textarea>
+              <button class="submit-btn" onclick="submitFeedback()">Send Reply</button>
+
+              <div class="feedback-list" id="feedbackList">
+                <div class="feedback-msg" style="color:#A88944; text-align:center;">Loading replies...</div>
+              </div>
+            </div>
+
+            <div class="click-hint" style="position:relative; bottom:auto; margin-top:4px;">Tap Image for Fullscreen</div>
+          </div>
+          <div class="face cover-face back">
+            <div class="cover-title">Happy<br>1st<br>Anniversary</div>
+            <div class="heart-icon">✦ ❤ ✦</div>
+            <div class="click-hint">Tap to Open</div>
+          </div>
+        </div>
+
+        <!-- PAGE 3 -->
+        <div class="leaf" id="page3-leaf" onclick="flipPage(3)">
+          <div class="face page-face front">
+            <h2>Feb-March</h2>
+            <img src="https://i.ibb.co/DJ2Vjm9/Picsart-26-10-07-08-24-54-733.jpg" alt="Photo" class="photo-img-full">
+            <p>What you used to send me back then☝️😭😂</p>
+          </div>
+          <div class="face page-face back">
+            <h2>Our Story Continues</h2>
+            <img src="https://i.ibb.co/Lz9tj1Xq/1789119706381.png" alt="Photo" class="photo-img">
+            <p>To many more chapters ❤</p>
+          </div>
+        </div>
+
+        <!-- PAGE 2 -->
+        <div class="leaf" id="page2-leaf" onclick="flipPage(2)">
+          <div class="face page-face front">
+            <h2>Sweet Moments</h2>
+            <img src="https://i.ibb.co/BVYh8WF1/Picsart-26-10-07-07-59-36-768.jpg" alt="Photo" class="photo-img-p2">
+            <p>Gusse me bhondu lgti ho btw🫶🥸.</p>
+          </div>
+          <div class="face page-face back">
+            <h2>Hope</h2>
+            <div class="poem-box">
+              <p>This year was quite a memorable one, wasn't it?<br>We came together, fell apart, stuck together, grew a lot.</p>
+              <p>Honestly, I do not know about your sides,<br>still I find you the only one for me, my bride.</p>
+              <p>We may not be perfect, we are meant to be better,<br>I hope the stars too listen to me when I say,<br>"we are going to be together".</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAGE 1 -->
+        <div class="leaf" id="page1-leaf" onclick="flipPage(1)">
+          <div class="face page-face front">
+            <h2>Remember?</h2>
+            <img src="https://i.ibb.co/xSpFMMB9/IMG-20260911-152022.jpg" alt="Photo" class="photo-img">
+            <p>Where our story began...</p>
+          </div>
+          <div class="face page-face back">
+            <h2>Falling</h2>
+            <div class="poem-box">
+              <p>It feels like I knew, what I wanted from the moment I fell for you.<br>No sooner did that happen, you became my only need, my daily habit, my dose of happiness, the moment I heard you.</p>
+              <p>It's funny how I didn't even know the date I found you,<br>but trust me darling, I have fallen everytime on my knees just by listening to you.</p>
+              <p>You may think it as a joke, but you do not have a clue, how much I crave and want to adore you.<br>Believe it or not, it is true that I love you the most since the moment I fell for you....</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- FRONT COVER -->
+        <div class="leaf" id="front-cover" onclick="openDiary()">
+          <div class="face cover-face front">
+            <div class="cover-title">Happy<br>1st<br>Anniversary</div>
+            <div class="heart-icon">✦ ❤ ✦</div>
+            <div class="click-hint">Tap to Open</div>
+          </div>
+          <div class="face cover-face back"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- FULLSCREEN SCREENSHOT OVERLAY -->
+  <div id="finalOverlay" onclick="hideFinalImage()" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; background: #000; z-index: 2147483647; display: none; justify-content: center; align-items: center; padding: 0; margin: 0; box-sizing: border-box;">
+    
+    <span onclick="hideFinalImage()" style="position: absolute; top: 15px; right: 20px; color: #fff; font-size: 32px; font-family: sans-serif; cursor: pointer; z-index: 2147483648; background: rgba(0,0,0,0.5); width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center; line-height: 1;">&times;</span>
+
+    <img src="https://i.ibb.co/tM7GmJ9K/Screenshot-2026-10-07-08-47-11-725-com-google-android-apps-messaging.jpg" alt="Final Screenshot" style="width: auto !important; height: auto !important; max-width: 100vw !important; max-height: 100vh !important; max-height: 100dvh !important; object-fit: contain !important; border: none !important; margin: auto !important; display: block !important;">
+
+  </div>
+
+  <script>
+    /* JIGSAW PUZZLE SYSTEM */
+    const PUZZLE_IMAGE_URL = 'https://i.ibb.co/5WT8vPvT/IMG-20261007-191821.jpg';
+
+    let currentPositions = [];
+    let selectedIndex = null;
+
+    function initPuzzle() {
+      const grid = document.getElementById('puzzleGrid');
+      grid.innerHTML = '';
+      
+      // Pre-shuffled order
+      do {
+        currentPositions = [0, 1, 2, 3, 4, 5, 6, 7, 8].sort(() => Math.random() - 0.5);
+      } while (isSolved());
+
+      currentPositions.forEach((correctIndex, currentGridSlot) => {
+        const piece = document.createElement('div');
+        piece.className = 'puzzle-piece';
+        piece.dataset.slot = currentGridSlot;
+        
+        const col = correctIndex % 3;
+        const row = Math.floor(correctIndex / 3);
+        piece.style.backgroundImage = `url('${PUZZLE_IMAGE_URL}')`;
+        piece.style.backgroundPosition = `-${col * 100}px -${row * 100}px`;
+
+        piece.addEventListener('click', () => handlePieceClick(currentGridSlot));
+        grid.appendChild(piece);
+      });
+    }
+
+    function handlePieceClick(slotIndex) {
+      // Start music on first tap on the puzzle page
+      if (!musicStarted) {
+        playMusic();
+      }
+
+      const gridChildren = document.getElementById('puzzleGrid').children;
+
+      if (selectedIndex === null) {
+        selectedIndex = slotIndex;
+        gridChildren[slotIndex].classList.add('selected');
+      } else if (selectedIndex === slotIndex) {
+        gridChildren[slotIndex].classList.remove('selected');
+        selectedIndex = null;
+      } else {
+        gridChildren[selectedIndex].classList.remove('selected');
+
+        const temp = currentPositions[selectedIndex];
+        currentPositions[selectedIndex] = currentPositions[slotIndex];
+        currentPositions[slotIndex] = temp;
+
+        updatePuzzleUI();
+
+        selectedIndex = null;
+
+        if (isSolved()) {
+          onPuzzleSolved();
+        }
+      }
+    }
+
+    function updatePuzzleUI() {
+      const gridChildren = document.getElementById('puzzleGrid').children;
+      currentPositions.forEach((correctIndex, slotIndex) => {
+        const col = correctIndex % 3;
+        const row = Math.floor(correctIndex / 3);
+        gridChildren[slotIndex].style.backgroundPosition = `-${col * 100}px -${row * 100}px`;
+      });
+    }
+
+    function isSolved() {
+      return currentPositions.every((val, idx) => val === idx);
+    }
+
+    function onPuzzleSolved() {
+      const status = document.getElementById('puzzleStatus');
+      status.style.color = '#FFD700';
+      status.style.fontWeight = 'bold';
+      status.innerHTML = '✨ Unlocked! Revealing your diary... ✨';
+
+      const pieces = document.querySelectorAll('.puzzle-piece');
+      pieces.forEach(p => p.style.border = 'none');
+
+      setTimeout(() => {
+        document.getElementById('puzzleOverlay').classList.add('hidden');
+      }, 1400);
+    }
+
+    /* DIARY & MUSIC SYSTEM */
+    let isOpened = false;
+    let musicStarted = false;
+
+    // AUDIO TIMESTAMP CONSTANTS
+    const LOOP_START = 44; // Start right from 0:44
+
+    const audio = document.getElementById('bgMusic');
+
+    // When the song ends naturally, loop back to 0:44
+    audio.addEventListener('ended', function() {
+      audio.currentTime = LOOP_START;
+      audio.play();
+    });
+
+    function playMusic() {
+      const btn = document.getElementById('musicToggleBtn');
+      audio.volume = 0.6;
+      audio.currentTime = LOOP_START;
+
+      audio.play().then(() => {
+        btn.innerHTML = '🎵';
+        musicStarted = true;
+      }).catch(err => {
+        console.log("Audio play error:", err);
+        btn.innerHTML = '🔇';
+      });
+    }
+
+    function toggleMusic(event) {
+      if (event) event.stopPropagation();
+      const btn = document.getElementById('musicToggleBtn');
+
+      if (audio.paused) {
+        audio.play().then(() => {
+          btn.innerHTML = '🎵';
+          musicStarted = true;
+        }).catch(err => console.log("Audio play error:", err));
+      } else {
+        audio.pause();
+        btn.innerHTML = '🔇';
+      }
+    }
+
+    function openDiary() {
+      if (isOpened) return;
+      document.getElementById('bookSpread').classList.add('is-open');
+      document.getElementById('front-cover').classList.add('flipped');
+      isOpened = true;
+      loadFeedbacks();
+
+      if (!musicStarted) {
+        playMusic();
+      }
+    }
+
+    function flipPage(num) {
+      if (!isOpened) return;
+      const p1 = document.getElementById('page1-leaf');
+      const p2 = document.getElementById('page2-leaf');
+      const p3 = document.getElementById('page3-leaf');
+
+      if (num === 1) p1.classList.toggle('flipped');
+      else if (num === 2) p2.classList.toggle('flipped');
+      else if (num === 3) p3.classList.toggle('flipped');
+    }
+
+    function closeDiary(event) {
+      if (!isOpened) return;
+      const p3 = document.getElementById('page3-leaf');
+      if (!p3.classList.contains('flipped')) return;
+
+      const spread = document.getElementById('bookSpread');
+      const backCover = document.getElementById('back-cover');
+
+      backCover.classList.add('flipped');
+      spread.classList.remove('is-open');
+
+      setTimeout(() => {
+        document.getElementById('page1-leaf').classList.remove('flipped');
+        document.getElementById('page2-leaf').classList.remove('flipped');
+        document.getElementById('page3-leaf').classList.remove('flipped');
+        document.getElementById('front-cover').classList.remove('flipped');
+        backCover.classList.remove('flipped');
+        isOpened = false;
+      }, 820);
+    }
+
+    function showFinalImage(event) {
+      event.stopPropagation();
+      document.getElementById('diaryCard').classList.add('hidden');
+      
+      const overlay = document.getElementById('finalOverlay');
+      overlay.style.display = 'flex';
+    }
+
+    function hideFinalImage() {
+      const overlay = document.getElementById('finalOverlay');
+      overlay.style.display = 'none';
+
+      document.getElementById('diaryCard').classList.remove('hidden');
+    }
+
+    /* FEEDBACK MANAGEMENT SYSTEM */
+    function loadFeedbacks() {
+      const local = localStorage.getItem('anniversary_replies');
+      let data = local ? JSON.parse(local) : [];
+      renderFeedbacks(data);
+    }
+
+    function renderFeedbacks(feedbacks) {
+      const listEl = document.getElementById('feedbackList');
+      if (!feedbacks || feedbacks.length === 0) {
+        listEl.innerHTML = `<div class="feedback-msg" style="color:#A88944; text-align:center;">Waiting for your reply, cutuuuu!🫠❣️</div>`;
+        return;
+      }
+      listEl.innerHTML = feedbacks.map((item, index) => `
+        <div class="feedback-item">
+          <div class="feedback-header">
+            <span class="feedback-name">${escapeHtml(item.name)}</span>
+            <button class="delete-btn" onclick="deleteFeedback(${index})">Delete</button>
+          </div>
+          <div class="feedback-msg">${escapeHtml(item.msg)}</div>
+        </div>
+      `).join('');
+    }
+
+    function submitFeedback() {
+      const nameInput = document.getElementById('fbName');
+      const msgInput = document.getElementById('fbMessage');
+      const name = nameInput.value.trim() || "Anonymous";
+      const msg = msgInput.value.trim();
+
+      if (!msg) {
+        alert("Please enter a reply before sending!");
+        return;
+      }
+
+      let existing = JSON.parse(localStorage.getItem('anniversary_replies') || "[]");
+      existing.unshift({ name: name, msg: msg });
+      localStorage.setItem('anniversary_replies', JSON.stringify(existing));
+
+      renderFeedbacks(existing);
+
+      nameInput.value = '';
+      msgInput.value = '';
+    }
+
+    function deleteFeedback(index) {
+      let existing = JSON.parse(localStorage.getItem('anniversary_replies') || "[]");
+      existing.splice(index, 1);
+      localStorage.setItem('anniversary_replies', JSON.stringify(existing));
+      renderFeedbacks(existing);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // Initial Load
+    initPuzzle();
+    loadFeedbacks();
+  </script>
+</body>
+</html>
